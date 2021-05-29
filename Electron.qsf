@@ -27,7 +27,7 @@ set_global_assignment -name FAMILY "Cyclone V"
 set_global_assignment -name DEVICE 5CSEBA6U23I7
 set_global_assignment -name TOP_LEVEL_ENTITY sys_top
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 16.1.2
-set_global_assignment -name LAST_QUARTUS_VERSION "17.1.1 Lite Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "17.0.2 Lite Edition"
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "01:53:30  APRIL 20, 2017"
 set_global_assignment -name DEVICE_FILTER_PACKAGE UFBGA
 set_global_assignment -name DEVICE_FILTER_PIN_COUNT 672
@@ -356,7 +356,7 @@ set_global_assignment -name VHDL_FILE src/T6502/T65_Pack.vhd
 set_global_assignment -name VHDL_FILE src/T6502/T65_MCode.vhd
 set_global_assignment -name VHDL_FILE src/T6502/T65_ALU.vhd
 set_global_assignment -name VHDL_FILE src/T6502/T65.vhd
-set_global_assignment -name VHDL_FILE src/MC6522/m6522.vhd
+set_global_assignment -name VHDL_FILE src/via6522.vhd
 set_global_assignment -name VHDL_FILE src/ElectronULA.vhd
 set_global_assignment -name VHDL_FILE src/ElectronFpga_core.vhd
 set_global_assignment -name CDF_FILE jtag.cdf
