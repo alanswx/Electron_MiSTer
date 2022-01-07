@@ -9,3 +9,7 @@ jtag.cdf
 /*.qws
 greybox_tmp/cbx_args.txt
 */greybox_tmp/cbx_args.txt
+.idea
+output_files
+incremental_db
+

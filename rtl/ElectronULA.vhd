@@ -277,26 +277,25 @@ architecture behavioral of ElectronULA is
   signal via1_clken_1   : std_logic;
   signal via1_clken_2   : std_logic;
   signal via1_clken_4   : std_logic;
-  signal via4_clken   : std_logic;
-  signal via4_clken_1   : std_logic;
-  signal via4_clken_2   : std_logic;
-  signal via4_clken_4   : std_logic;
+  signal via2_clken     : std_logic;
+  signal via2_clken_1   : std_logic;
+  signal via2_clken_2   : std_logic;
+  signal via2_clken_4   : std_logic;
 
   signal mc6522_enable     : std_logic;
   signal mc6522_data       : std_logic_vector(7 downto 0);
-  signal mc6522_data_r     : std_logic_vector(7 downto 0);
-  signal mc6522_irq_n      : std_logic;
+  signal mc6522_irq        : std_logic;
   -- Port A is not really used, so signals directly loop back out to in
   signal mc6522_ca2        : std_logic;
   signal mc6522_porta      : std_logic_vector(7 downto 0);
   -- Port B is used for the MMBEEB style SDCard Interface
   signal mc6522_cb1_in     : std_logic;
   signal mc6522_cb1_out    : std_logic;
-  signal mc6522_cb1_oe_l   : std_logic;
+  signal mc6522_cb1_oe     : std_logic;
   signal mc6522_cb2_in     : std_logic;
   signal mc6522_portb_in   : std_logic_vector(7 downto 0);
   signal mc6522_portb_out  : std_logic_vector(7 downto 0);
-  signal mc6522_portb_oe_l : std_logic_vector(7 downto 0);
+  signal mc6522_portb_oe   : std_logic_vector(7 downto 0);
   signal sdclk_int         : std_logic;
 
   signal ula_irq_n         : std_logic;
@@ -467,7 +466,7 @@ begin
                 data_shift                when addr(15 downto 8) = x"FE" and addr(3 downto 0) = x"4" else
 --                crtc_do                   when crtc_enable = '1' and IncludeJafaMode7 else
 --                status_do                 when status_enable = '1' and IncludeJafaMode7 else
-                mc6522_data_r             when mc6522_enable = '1' and IncludeMMC else
+                mc6522_data               when mc6522_enable = '1' and IncludeMMC else
                 x"F1"; -- todo FIXEME
 
     data_en  <= '1'                       when addr(15) = '0' else
@@ -1176,33 +1175,33 @@ begin
             -- address/data changes on cycle 1
             cpu_clken_1  <= clken_counter(0) and clken_counter(1) and clken_counter(2) and clken_counter(3);
             via1_clken_1 <= clken_counter(3);
-            via4_clken_1 <= clken_counter(0) and clken_counter(1);
+				via2_clken_1 <= clken_counter(2);
             -- 2MHz
             -- cpu_clken active on cycle 0, 8
             -- address/data changes on cycle 1, 9
             cpu_clken_2  <= clken_counter(0) and clken_counter(1) and clken_counter(2);
             via1_clken_2 <= clken_counter(2);
-            via4_clken_2 <= clken_counter(0);
+				via2_clken_2 <= clken_counter(1);
             -- 4MHz - no contention
             -- cpu_clken active on cycle 0, 4, 8, 12
             -- address/data changes on cycle 1, 5, 9, 13
             cpu_clken_4  <= clken_counter(0) and clken_counter(1);
             via1_clken_4 <= clken_counter(1);
-            via4_clken_4 <= '1';
+				via2_clken_4 <= clken_counter(0);
         end if;
     end process;
 
     clk_gen2 : process(turbo, clken_counter, clk_state,
                        cpu_clken_1, cpu_clken_2, cpu_clken_4,
                        via1_clken_1, via1_clken_2, via1_clken_4,
-                       via4_clken_1, via4_clken_2, via4_clken_4)
+							  via2_clken_1, via2_clken_2, via2_clken_4)
     begin
         case (turbo) is
             when "01" =>
                 -- 2Mhz Contention
                 cpu_clken <= '0';
                 via1_clken <= '0';
-                via4_clken <= '0';
+					 via2_clken <= '0';
                 if clken_counter(0) = '1' and clken_counter(1) = '1' then
                     -- 1MHz/2MHz/Stopped
                     if clk_state = "001" or clk_state = "011" then
@@ -1213,24 +1212,23 @@ begin
                     --    via1_clken <= '1';
                     --end if;
                     via1_clken <= clk_state(1);
-                    -- 4MHz fixed
-                    via4_clken <= '1';
+						  via2_clken <= clk_state(0);
                 end if;
             when "10" =>
                 -- 2Mhz No Contention
                 cpu_clken  <= cpu_clken_2;
                 via1_clken <= via1_clken_2;
-                via4_clken <= via4_clken_2;
+					 via2_clken <= via2_clken_2;
             when "11" =>
                 -- 4MHz No contention
                 cpu_clken  <= cpu_clken_4;
                 via1_clken <= via1_clken_4;
-                via4_clken <= via4_clken_4;
+					 via2_clken <= via2_clken_4;
             when others =>
                 -- 1MHz No Contention
                 cpu_clken  <= cpu_clken_1;
                 via1_clken <= via1_clken_1;
-                via4_clken <= via4_clken_1;
+					 via2_clken <= via2_clken_1;
         end case;
     end process;
 
@@ -1242,58 +1240,47 @@ begin
 
         mc6522_enable  <= '1' when addr(15 downto 4) = x"fcb" else '0';
 
-        via : entity work.M6522 port map(
-            I_RS       => addr(3 downto 0),
-            I_DATA     => data_in(7 downto 0),
-            O_DATA     => mc6522_data(7 downto 0),
-            I_RW_L     => R_W_n,
-            I_CS1      => mc6522_enable,
-            I_CS2_L    => '0',
-            O_IRQ_L    => mc6522_irq_n,
-            I_CA1      => '0',
-            I_CA2      => mc6522_ca2,
-            O_CA2      => mc6522_ca2,
-            O_CA2_OE_L => open,
-            I_PA       => mc6522_porta,
-            O_PA       => mc6522_porta,
-            O_PA_OE_L  => open,
-            I_CB1      => mc6522_cb1_in,
-            O_CB1      => mc6522_cb1_out,
-            O_CB1_OE_L => mc6522_cb1_oe_l,
-            I_CB2      => mc6522_cb2_in,
-            O_CB2      => open,
-            O_CB2_OE_L => open,
-            I_PB       => mc6522_portb_in,
-            O_PB       => mc6522_portb_out,
-            O_PB_OE_L  => mc6522_portb_oe_l,
-            RESET_L    => RST_n,
-            I_P2_H     => via1_clken,
-            ENA_4      => via4_clken,
-            CLK        => clk_16M00);
-
-        -- This is needed as in v003 of the 6522 data out is only valid while I_P2_H is asserted
-        -- I_P2_H is driven from via1_clken
-        data_latch: process(clk_16M00)
-        begin
-            if rising_edge(clk_16M00) then
-                if via1_clken = '1' then
-                    mc6522_data_r <= mc6522_data;
-                end if;
-            end if;
-        end process;
+			via : work.via6522 port map (
+				clock       => clk_16M00,
+				rising      => via2_clken and     via1_clken,
+				falling     => via2_clken and not via1_clken,
+				reset       => not RST_n,
+				addr        => addr(3 downto 0),
+				wen         => mc6522_enable and not R_W_n,
+				ren         => mc6522_enable and     R_W_n,
+				data_in     => data_in(7 downto 0),
+				data_out    => mc6522_data(7 downto 0),
+				port_a_i    => mc6522_porta,
+				port_a_o    => mc6522_porta,
+				port_a_t    => open,
+				port_b_i    => mc6522_portb_in,
+				port_b_o    => mc6522_portb_out,
+				port_b_t    => mc6522_portb_oe,
+				ca1_i       => '0',
+				ca2_i       => mc6522_ca2,
+				ca2_o       => mc6522_ca2,
+				ca2_t       => open,
+				cb1_i       => mc6522_cb1_in,
+				cb1_o       => mc6522_cb1_out,
+				cb1_t       => mc6522_cb1_oe,
+				cb2_i       => mc6522_cb2_in,
+				cb2_o       => open,
+				cb2_t       => open,
+				irq         => mc6522_irq
+			);
 
         -- loop back data port
         mc6522_portb_in <= mc6522_portb_out;
 
         -- SDCLK is driven from either PB1 or CB1 depending on the SR Mode
-        sdclk_int     <= mc6522_portb_out(1) when mc6522_portb_oe_l(1) = '0' else
-                         mc6522_cb1_out      when mc6522_cb1_oe_l = '0' else
+        sdclk_int     <= mc6522_portb_out(1) when mc6522_portb_oe(1) = '1' else
+                         mc6522_cb1_out      when mc6522_cb1_oe = '1' else
                          '1';
         SDCLK         <= sdclk_int;
         mc6522_cb1_in <= sdclk_int;
 
         -- SDMOSI is always driven from PB0
-        SDMOSI        <= mc6522_portb_out(0) when mc6522_portb_oe_l(0) = '0' else
+        SDMOSI        <= mc6522_portb_out(0) when mc6522_portb_oe(0) = '1' else
                      '1';
         -- SDMISO is always read from CB2
         mc6522_cb2_in <= SDMISO;
@@ -1301,7 +1288,7 @@ begin
         -- SDSS is hardwired to 0 (always selected) as there is only one slave attached
         SDSS          <= '0';
 
-        IRQ_n <= ula_irq_n and mc6522_irq_n;
+        IRQ_n <= ula_irq_n and not mc6522_irq;
 
 
 
