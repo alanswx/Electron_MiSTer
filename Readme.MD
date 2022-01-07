@@ -12,7 +12,7 @@ my clumsy attempt at having a variable video clock is not working yet.
 
 On start up you will need to ctrl-Break to clear the garbage on the screen. -- fix me
 
-Put the Electron version of beeb.mb in games as boot.vhd
+Put the Electron version of beeb.mb in games as boot.vhd (Acorn Electron Games & Magazines BEEB.MMB)
 
 
 I cannot get used to the Func Number for Function Keys. -- Func = Caps Lock
