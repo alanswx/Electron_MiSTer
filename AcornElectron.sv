@@ -194,7 +194,7 @@ assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
 
 `include "build_id.v" 
 parameter CONF_STR = {
-	"Electron;;",
+	"AcornElectron;;",
 	"-;",
 //	"S,VHD;",
 //	"OC,Autostart,Yes,No;",
