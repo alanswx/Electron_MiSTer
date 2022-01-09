@@ -215,13 +215,14 @@ parameter CONF_STR = {
 
 /////////////////  CLOCKS  ////////////////////////
 
-wire clk_sys; //96mhz
+wire clk_sys=clk_40; //96mhz
 wire clk_16;
 wire clk_24;
 wire clk_32;
 wire clk_33p3;
 wire clk_40;
 wire clk_48;
+wire clk_96;
 wire clk_80;
 wire clk_100;
 // 120 is 80 now?
@@ -243,7 +244,7 @@ pll pll
 	.outclk_2(clk_32),
 	.outclk_3(clk_40),
 	.outclk_4(clk_48),
-	.outclk_5(clk_sys),
+	.outclk_5(clk_96),
 	.outclk_6(clk_80)
 );
 
@@ -553,12 +554,18 @@ wire [3:0] r,g,b;
 assign CLK_VIDEO = clk_80;
 
 
+reg ce_pix2;
+always @(posedge CLK_VIDEO) begin
+	ce_pix2 <=  !ce_pix2;
+end
+
+
 video_mixer #(.GAMMA(1)) video_mixer
 (
    .*,
 
    .CLK_VIDEO(CLK_VIDEO),
-   .ce_pix(ce_pix),
+   .ce_pix(ce_pix2),
 
 	.hq2x(scale==1),
 
