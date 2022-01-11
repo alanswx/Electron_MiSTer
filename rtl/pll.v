@@ -14,7 +14,8 @@ module pll (
 		output wire  outclk_3, // outclk3.clk
 		output wire  outclk_4, // outclk4.clk
 		output wire  outclk_5, // outclk5.clk
-		output wire  outclk_6  // outclk6.clk
+		output wire  outclk_6, // outclk6.clk
+		output wire  outclk_7  // outclk7.clk
 	);
 
 	pll_0002 pll_inst (
@@ -27,6 +28,7 @@ module pll (
 		.outclk_4 (outclk_4), // outclk4.clk
 		.outclk_5 (outclk_5), // outclk5.clk
 		.outclk_6 (outclk_6), // outclk6.clk
+		.outclk_7 (outclk_7), // outclk7.clk
 		.locked   ()          // (terminated)
 	);
 
@@ -72,7 +74,7 @@ endmodule
 // Retrieval info: 	<generic name="gui_dsm_out_sel" value="1st_order" />
 // Retrieval info: 	<generic name="gui_use_locked" value="false" />
 // Retrieval info: 	<generic name="gui_en_adv_params" value="false" />
-// Retrieval info: 	<generic name="gui_number_of_clocks" value="7" />
+// Retrieval info: 	<generic name="gui_number_of_clocks" value="8" />
 // Retrieval info: 	<generic name="gui_multiply_factor" value="1" />
 // Retrieval info: 	<generic name="gui_frac_multiply_factor" value="1" />
 // Retrieval info: 	<generic name="gui_divide_factor_n" value="1" />
@@ -140,7 +142,7 @@ endmodule
 // Retrieval info: 	<generic name="gui_actual_phase_shift6" value="0" />
 // Retrieval info: 	<generic name="gui_duty_cycle6" value="50" />
 // Retrieval info: 	<generic name="gui_cascade_counter7" value="false" />
-// Retrieval info: 	<generic name="gui_output_clock_frequency7" value="100.0" />
+// Retrieval info: 	<generic name="gui_output_clock_frequency7" value="64.0" />
 // Retrieval info: 	<generic name="gui_divide_factor_c7" value="1" />
 // Retrieval info: 	<generic name="gui_actual_output_clock_frequency7" value="0 MHz" />
 // Retrieval info: 	<generic name="gui_ps_units7" value="ps" />

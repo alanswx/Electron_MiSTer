@@ -14,5 +14,6 @@
   <pin name="outclk_4" direction="output" scope="external" />
   <pin name="outclk_5" direction="output" scope="external" />
   <pin name="outclk_6" direction="output" scope="external" />
+  <pin name="outclk_7" direction="output" scope="external" />
  </global>
 </pinplan>

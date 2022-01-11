@@ -48,6 +48,7 @@ entity ElectronFpga_core is
         video_hsync    : out std_logic;
 		  video_hblank   : out std_logic;
 		  video_vblank   : out std_logic;
+		  blank   : out std_logic;
         -- Audio
         audio_l        : out std_logic;
         audio_r        : out std_logic;
@@ -185,6 +186,7 @@ begin
         hsync     => video_hsync,
 		  hblank		=> video_hblank,
 		  vblank		=> video_vblank,
+		  blank		=> blank,
 
         -- Audio
         sound     => sound,

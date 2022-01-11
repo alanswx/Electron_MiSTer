@@ -8,7 +8,8 @@
 			outclk_3 : out std_logic;        -- clk
 			outclk_4 : out std_logic;        -- clk
 			outclk_5 : out std_logic;        -- clk
-			outclk_6 : out std_logic         -- clk
+			outclk_6 : out std_logic;        -- clk
+			outclk_7 : out std_logic         -- clk
 		);
 	end component pll;
 

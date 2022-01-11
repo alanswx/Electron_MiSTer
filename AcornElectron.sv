@@ -225,6 +225,7 @@ wire clk_48;
 wire clk_96;
 wire clk_80;
 wire clk_100;
+wire clk_64;
 // 120 is 80 now?
 xtra_pll xtra_pll
 (
@@ -245,7 +246,8 @@ pll pll
 	.outclk_3(clk_40),
 	.outclk_4(clk_48),
 	.outclk_5(clk_96),
-	.outclk_6(clk_80)
+	.outclk_6(clk_80),
+	.outclk_7(clk_64)
 );
 
 reg vid_clk;
@@ -494,6 +496,7 @@ ElectronFpga_core Electron
 	.video_blue(b),
 	.video_vblank(vblank),
 	.video_hblank(hblank),
+	.blank(blank),
 	.video_vsync(vs),
 	.video_hsync(hs),
 
@@ -521,7 +524,8 @@ ElectronFpga_core Electron
    //     -- 01 - sRGB - non interlaced
    //     -- 10 - SVGA - 50Hz
    //     -- 11 - SVGA - 60Hz
-	.vid_mode(2'b11)
+	//.vid_mode(2'b11)
+	.vid_mode(2'b01)
 //	.vid_mode(status[8:7])
 	
 //	.RTC(RTC),
@@ -548,24 +552,43 @@ assign AUDIO_R = {16{audio_snr}};
 assign AUDIO_MIX = 0;
 assign AUDIO_S = 0;
 
+wire blank;
 wire hs, vs, hblank, vblank, ce_pix, clk_sel;
 wire [3:0] r,g,b;
 
-assign CLK_VIDEO = clk_80;
+assign CLK_VIDEO = clk_64;
 
-
+/*
 reg ce_pix2;
 always @(posedge CLK_VIDEO) begin
 	ce_pix2 <=  !ce_pix2;
 end
+*/
+
+reg ce_pix2;
+always @(posedge CLK_VIDEO ) begin
+   reg [1:0] div;
+
+   div <= div + 1'd1;
+   ce_pix2 <= div == 0;
+end
 
 
+assign CE_PIXEL = ce_pix2;
+assign VGA_DE = ~(hblank | vblank);
+assign VGA_HS = ~hs;
+assign VGA_VS = ~vs;
+assign VGA_R = {r,r};
+assign VGA_G = {g,g};
+assign VGA_B = {b,b};
+/*
 video_mixer #(.GAMMA(1)) video_mixer
 (
    .*,
 
    .CLK_VIDEO(CLK_VIDEO),
    .ce_pix(ce_pix2),
+   //.ce_pix(ce_pix),
 
 	.hq2x(scale==1),
 
@@ -575,11 +598,14 @@ video_mixer #(.GAMMA(1)) video_mixer
 	.B({b,b}),
 
    // Positive pulses.
-   .HSync(hs),
-   .VSync(vs),
+   .HSync(~hs),
+   .VSync(~vs),
    .HBlank(hblank),
    .VBlank(vblank)
 );
+
+*/
+
 /*
 
 

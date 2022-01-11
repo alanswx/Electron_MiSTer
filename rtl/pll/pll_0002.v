@@ -28,6 +28,9 @@ module  pll_0002(
 	// interface 'outclk6'
 	output wire outclk_6,
 
+	// interface 'outclk7'
+	output wire outclk_7,
+
 	// interface 'locked'
 	output wire locked
 );
@@ -36,29 +39,29 @@ module  pll_0002(
 		.fractional_vco_multiplier("true"),
 		.reference_clock_frequency("50.0 MHz"),
 		.operation_mode("direct"),
-		.number_of_clocks(7),
-		.output_clock_frequency0("16.000000 MHz"),
+		.number_of_clocks(8),
+		.output_clock_frequency0("15.999999 MHz"),
 		.phase_shift0("0 ps"),
 		.duty_cycle0(50),
-		.output_clock_frequency1("24.000000 MHz"),
+		.output_clock_frequency1("23.999999 MHz"),
 		.phase_shift1("0 ps"),
 		.duty_cycle1(50),
-		.output_clock_frequency2("32.000000 MHz"),
+		.output_clock_frequency2("31.999999 MHz"),
 		.phase_shift2("0 ps"),
 		.duty_cycle2(50),
-		.output_clock_frequency3("40.000000 MHz"),
+		.output_clock_frequency3("39.999998 MHz"),
 		.phase_shift3("0 ps"),
 		.duty_cycle3(50),
-		.output_clock_frequency4("48.000000 MHz"),
+		.output_clock_frequency4("47.999998 MHz"),
 		.phase_shift4("0 ps"),
 		.duty_cycle4(50),
-		.output_clock_frequency5("96.000000 MHz"),
+		.output_clock_frequency5("95.999996 MHz"),
 		.phase_shift5("0 ps"),
 		.duty_cycle5(50),
-		.output_clock_frequency6("80.000000 MHz"),
+		.output_clock_frequency6("79.999996 MHz"),
 		.phase_shift6("0 ps"),
 		.duty_cycle6(50),
-		.output_clock_frequency7("0 MHz"),
+		.output_clock_frequency7("63.999996 MHz"),
 		.phase_shift7("0 ps"),
 		.duty_cycle7(50),
 		.output_clock_frequency8("0 MHz"),
@@ -95,7 +98,7 @@ module  pll_0002(
 		.pll_subtype("General")
 	) altera_pll_i (
 		.rst	(rst),
-		.outclk	({outclk_6, outclk_5, outclk_4, outclk_3, outclk_2, outclk_1, outclk_0}),
+		.outclk	({outclk_7, outclk_6, outclk_5, outclk_4, outclk_3, outclk_2, outclk_1, outclk_0}),
 		.locked	(locked),
 		.fboutclk	( ),
 		.fbclk	(1'b0),

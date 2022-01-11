@@ -58,6 +58,7 @@ entity ElectronULA is
         hsync     : out std_logic;
 		  hblank		: out std_logic;
 		  vblank		: out std_logic;
+		  blank : out std_logic;
 
         -- Audio
         sound     : out std_logic;
@@ -935,7 +936,9 @@ begin
                 blue_int  <= (others => '0');
 
                 contention <= '0';
+		blank<='1';
             else
+		blank<='0';
 
                 -- Indicate possible memory contention on active scan lines
                 contention <= not mode_40;
