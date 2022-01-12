@@ -58,7 +58,8 @@ entity ElectronULA is
         hsync     : out std_logic;
 		  hblank		: out std_logic;
 		  vblank		: out std_logic;
-		  blank : out std_logic;
+		  hs : out std_logic;
+		  vs : out std_logic;
 
         -- Audio
         sound     : out std_logic;
@@ -300,7 +301,8 @@ architecture behavioral of ElectronULA is
   signal sdclk_int         : std_logic;
 
   signal ula_irq_n         : std_logic;
-
+  
+  
 -- Helper function to cast an std_logic value to an integer
 function sl2int (x: std_logic) return integer is
 begin
@@ -327,6 +329,8 @@ begin
     -- mode 10 - SVGA  @ 50Hz
     -- mode 11 - SVGA  @ 60Hz
 
+	 --clk_video <= clk_16M00;
+	 
     -- A simple clock mux causes lots of warnings from the Xilinx tool
     --  clk_video    <= clk_40M00 when mode = "11" else
     --                  clk_33M33 when mode = "10" else
@@ -866,6 +870,29 @@ begin
         end if;
     end process;
 
+	 
+
+
+
+--
+-- alanswx - this somehow fixes the 15khz on the HDMI scaler. Not sure why 
+-- the normal sync code is incompatible with the scaler. This may cause other bugs.
+--
+
+ process (clk_video)
+begin
+  if rising_edge(clk_video) then	
+  	if(h_count1 = hsync_start)  then  hs <= '0'; end if;
+	if(h_count1 = hsync_end) then hs <= '1'; end if;
+	
+	if(v_count = vsync_start) then   vs <= '1'; end if;
+	if(v_count = vsync_end) then vs <= '0'; end if;
+
+	end if;
+end process;
+
+	 
+	 
     -- SGVA timing at 60Hz with a 40.000MHz Pixel Clock
     -- Horizontal 800 + 40 + 128 + 88 = total 1056
     -- Vertical   600 +  1 +   4 + 23 = total 628
@@ -929,6 +956,10 @@ begin
 				else
 					hblank <= '0';
 				end if;
+				
+				
+				
+				
             if (h_count1 >= h_active or (mode_text = '0' and v_count >= v_active_gph) or (mode_text = '1' and v_count >= v_active_txt) or char_row >= 8) then
                 -- blanking and border are always black
                 red_int   <= (others => '0');
@@ -936,9 +967,7 @@ begin
                 blue_int  <= (others => '0');
 
                 contention <= '0';
-		blank<='1';
             else
-		blank<='0';
 
                 -- Indicate possible memory contention on active scan lines
                 contention <= not mode_40;

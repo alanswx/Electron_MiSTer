@@ -215,7 +215,8 @@ parameter CONF_STR = {
 
 /////////////////  CLOCKS  ////////////////////////
 
-wire clk_sys=clk_40; //96mhz
+//wire clk_sys=clk_40; //96mhz
+wire clk_sys=clk_16; //96mhz
 wire clk_16;
 wire clk_24;
 wire clk_32;
@@ -496,9 +497,11 @@ ElectronFpga_core Electron
 	.video_blue(b),
 	.video_vblank(vblank),
 	.video_hblank(hblank),
-	.blank(blank),
-	.video_vsync(vs),
-	.video_hsync(hs),
+
+	//	.video_vsync(vs),
+//	.video_hsync(hs),
+	.vs(vs), // -- these hs/vs seem more compatible with the scaler in 15khz mode
+	.hs(hs),
 
 	.audio_l(audio_snl),
 	.audio_r(audio_snr),
@@ -552,10 +555,10 @@ assign AUDIO_R = {16{audio_snr}};
 assign AUDIO_MIX = 0;
 assign AUDIO_S = 0;
 
-wire blank;
 wire hs, vs, hblank, vblank, ce_pix, clk_sel;
 wire [3:0] r,g,b;
 
+//assign CLK_VIDEO = clk_16;
 assign CLK_VIDEO = clk_64;
 
 /*
@@ -574,14 +577,27 @@ always @(posedge CLK_VIDEO ) begin
 end
 
 
-assign CE_PIXEL = ce_pix2;
+/*
+//assign CE_PIXEL = ce_pix2;
+assign CE_PIXEL = 1'b1;
 assign VGA_DE = ~(hblank | vblank);
-assign VGA_HS = ~hs;
-assign VGA_VS = ~vs;
+//assign VGA_DE = ~(VGA_HB | VGA_VB);
+assign VGA_HS = hs;
+assign VGA_VS = vs;
 assign VGA_R = {r,r};
 assign VGA_G = {g,g};
 assign VGA_B = {b,b};
-/*
+*/
+
+wire [2:0] scale = status[5:3];
+wire [2:0] sl = scale ? scale - 1'd1 : 3'd0;
+wire       scandoubler = (scale || forced_scandoubler);
+assign VGA_SL = sl[1:0];
+
+
+
+
+
 video_mixer #(.GAMMA(1)) video_mixer
 (
    .*,
@@ -598,53 +614,15 @@ video_mixer #(.GAMMA(1)) video_mixer
 	.B({b,b}),
 
    // Positive pulses.
-   .HSync(~hs),
-   .VSync(~vs),
+   .HSync(hs),
+   .VSync(vs),
    .HBlank(hblank),
    .VBlank(vblank)
 );
 
-*/
-
-/*
 
 
-video_mixer #(640, 1) mixer
-(
-	.clk_sys(CLK_VIDEO),
-	
-	.ce_pix(ce_pix),
-	.ce_pix_out(CE_PIXEL),
 
-	.hq2x(scale == 1),
-	.scanlines(0),
-	.scandoubler(scale),
-
-	.R({r,r}),
-	.G({g,g}),
-	.B({b,b}),
-
-	.mono(0),
-
-	.HSync(~hs),
-	.VSync(~vs),
-	.HBlank(hblank),
-	.VBlank(vblank),
-
-	.VGA_R(VGA_R),
-	.VGA_G(VGA_G),
-	.VGA_B(VGA_B),
-	.VGA_VS(VGA_VS),
-	.VGA_HS(VGA_HS),
-	.VGA_DE(VGA_DE)
-);
-*/
-
-assign VGA_F1 = 0;
-wire [2:0] scale = status[5:3];
-wire [2:0] sl = scale ? scale - 1'd1 : 3'd0;
-wire       scandoubler = (scale || forced_scandoubler);
-assign VGA_SL = sl[1:0];
 
 wire freeze_sync;
 //////////////////   SD   ///////////////////

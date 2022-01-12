@@ -48,7 +48,8 @@ entity ElectronFpga_core is
         video_hsync    : out std_logic;
 		  video_hblank   : out std_logic;
 		  video_vblank   : out std_logic;
-		  blank   : out std_logic;
+		  hs             : out std_logic;
+		  vs             : out std_logic;
         -- Audio
         audio_l        : out std_logic;
         audio_r        : out std_logic;
@@ -186,7 +187,8 @@ begin
         hsync     => video_hsync,
 		  hblank		=> video_hblank,
 		  vblank		=> video_vblank,
-		  blank		=> blank,
+		  hs        => hs, -- these hs/vs seem more compatible with the scaler in 15khz mode
+		  vs        => vs,
 
         -- Audio
         sound     => sound,
