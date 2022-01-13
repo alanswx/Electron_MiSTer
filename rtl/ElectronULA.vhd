@@ -1133,13 +1133,15 @@ end process;
     blue  <= (others => ttxt_b_out) when mode7_enable = '1' else
              blue_int;
 
-    vsync <= ttxt_vs_out when mode7_enable = '1' else
-             '1' when mode(1) = '0' else
-             vsync_int;
+    --vsync <= ttxt_vs_out when mode7_enable = '1' else
+    --         '1' when mode(1) = '0' else
+    --         vsync_int;
+    vsync <= vsync_int;
 
-    hsync <= ttxt_hs_out when mode7_enable = '1' else
-             hsync_int and vsync_int when mode(1) = '0' else
-             hsync_int;
+    --hsync <= ttxt_hs_out when mode7_enable = '1' else
+    --         hsync_int and vsync_int when mode(1) = '0' else
+    --         hsync_int;
+    hsync <= hsync_int;
 
     caps  <= caps_int;
     motor <= motor_int;

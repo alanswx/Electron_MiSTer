@@ -498,10 +498,10 @@ ElectronFpga_core Electron
 	.video_vblank(vblank),
 	.video_hblank(hblank),
 
-	//	.video_vsync(vs),
-//	.video_hsync(hs),
-	.vs(vs), // -- these hs/vs seem more compatible with the scaler in 15khz mode
-	.hs(hs),
+	.video_vsync(vs),
+	.video_hsync(hs),
+	//.vs(vs), // -- these hs/vs seem more compatible with the scaler in 15khz mode
+	//.hs(hs),
 
 	.audio_l(audio_snl),
 	.audio_r(audio_snr),
@@ -528,7 +528,8 @@ ElectronFpga_core Electron
    //     -- 10 - SVGA - 50Hz
    //     -- 11 - SVGA - 60Hz
 	//.vid_mode(2'b11)
-	.vid_mode(2'b01)
+	.vid_mode(2'b00) // interlaced
+	//.vid_mode(2'b01) // non interlaced
 //	.vid_mode(status[8:7])
 	
 //	.RTC(RTC),
