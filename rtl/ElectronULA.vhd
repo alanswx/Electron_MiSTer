@@ -58,8 +58,6 @@ entity ElectronULA is
         hsync     : out std_logic;
 		  hblank		: out std_logic;
 		  vblank		: out std_logic;
-		  hs : out std_logic;
-		  vs : out std_logic;
 
         -- Audio
         sound     : out std_logic;
@@ -88,7 +86,14 @@ entity ElectronULA is
         -- Clock Generation
         cpu_clken_out  : out std_logic;
         turbo          : in std_logic_vector(1 downto 0);
-        turbo_out      : out std_logic_vector(1 downto 0)
+        turbo_out      : out std_logic_vector(1 downto 0);
+
+		  		  joystick1_x   : in std_logic_vector(7 downto 0);
+		  joystick1_y   : in std_logic_vector(7 downto 0);
+		  joystick1_fire   : in std_logic;
+		  joystick2_x   : in std_logic_vector(7 downto 0);
+		  joystick2_y   : in std_logic_vector(7 downto 0);
+		  joystick2_fire   : in std_logic
 
         );
 end;
@@ -206,6 +211,10 @@ architecture behavioral of ElectronULA is
   signal green_int      : std_logic_vector(3 downto 0);
   signal blue_int       : std_logic_vector(3 downto 0);
 
+  signal adc_chan       : std_logic_vector(3 downto 0);
+  signal plus_1_stat_reg :std_logic_vector(7 downto 0);
+  signal plus_1_adc_data       : std_logic_vector (7 downto 0);
+  signal plus_1_adc_n_intr : std_logic;
   -- CRTC signals (only used when Jafa Mode 7 is enabled)
 --  signal crtc_enable    :   std_logic;
 --  signal crtc_clken     :   std_logic;
@@ -218,7 +227,7 @@ architecture behavioral of ElectronULA is
 --  signal crtc_cursor    :   std_logic;
 --  signal crtc_cursor1   :   std_logic;
 --  signal crtc_cursor2   :   std_logic;
-  signal crtc_ma        :   std_logic_vector(13 downto 0);
+  signal crtc_ma        :   std_logic_vector(13 downto 0) := (others => '0');
 --  signal crtc_ra        :   std_logic_vector(4 downto 0);
 --  signal status_enable  :   std_logic;
 --  signal status_do      :   std_logic_vector(7 downto 0);
@@ -235,11 +244,11 @@ architecture behavioral of ElectronULA is
 --  signal ttxt_r         :   std_logic;
 --  signal ttxt_g         :   std_logic;
 --  signal ttxt_b         :   std_logic;
-  signal ttxt_r_out     :   std_logic;
-  signal ttxt_g_out     :   std_logic;
-  signal ttxt_b_out     :   std_logic;
-  signal ttxt_hs_out    :   std_logic;
-  signal ttxt_vs_out    :   std_logic;
+  signal ttxt_r_out     :   std_logic:= '0';
+  signal ttxt_g_out     :   std_logic:= '0';
+  signal ttxt_b_out     :   std_logic:= '0';
+  signal ttxt_hs_out    :   std_logic:= '0';
+  signal ttxt_vs_out    :   std_logic:= '0';
 --  signal mist_r         :   std_logic_vector(1 downto 0);
 --  signal mist_g         :   std_logic_vector(1 downto 0);
 --  signal mist_b         :   std_logic_vector(1 downto 0);
@@ -472,6 +481,8 @@ begin
 --                crtc_do                   when crtc_enable = '1' and IncludeJafaMode7 else
 --                status_do                 when status_enable = '1' and IncludeJafaMode7 else
                 mc6522_data               when mc6522_enable = '1' and IncludeMMC else
+					 plus_1_stat_reg           when addr = x"FC72" else
+					 plus_1_adc_data          when addr = x"FC70" else
                 x"F1"; -- todo FIXEME
 
     data_en  <= '1'                       when addr(15) = '0' else
@@ -480,6 +491,9 @@ begin
 --                '1'                       when crtc_enable = '1' and IncludeJafaMode7 else
 --                '1'                       when status_enable = '1' and IncludeJafaMode7 else
                 '1'                       when mc6522_enable = '1' and IncludeMMC else
+					'1' 								when addr = x"FC72" else
+					'1'								when addr = x"FC70" else
+
                 '0';
 
     -- Register FEx0 is the Interrupt Status Register (Read Only)
@@ -745,6 +759,9 @@ begin
                     if (addr = x"bfdf" and page_enable = '1' and page(2 downto 1) = "00" and ctrl_caps = '1' and kbd(0) = '0') then
                         turbo_out <= "11";
                     end if;
+						  if (addr = x"FC70") then -- this will set what channel of adc to read
+								adc_chan <= data_in(3 downto 0);
+						  end if; 
                     if (addr(15 downto 8) = x"FE") then
                         if (R_W_n = '1') then
                             -- Clear the power on reset flag on the first read of the ISR (FEx0)
@@ -874,22 +891,6 @@ begin
 
 
 
---
--- alanswx - this somehow fixes the 15khz on the HDMI scaler. Not sure why 
--- the normal sync code is incompatible with the scaler. This may cause other bugs.
---
-
- process (clk_video)
-begin
-  if rising_edge(clk_video) then	
-  	if(h_count1 = hsync_start)  then  hs <= '0'; end if;
-	if(h_count1 = hsync_end) then hs <= '1'; end if;
-	
-	if(v_count = vsync_start) then   vs <= '1'; end if;
-	if(v_count = vsync_end) then vs <= '0'; end if;
-
-	end if;
-end process;
 
 	 
 	 
@@ -1133,6 +1134,11 @@ end process;
     blue  <= (others => ttxt_b_out) when mode7_enable = '1' else
              blue_int;
 
+				 
+	 -- alanswx -- for some reason this code set's vsync to 1 when it is in
+	 -- 15khz mode, which breaks the MiSTer scaler. For now we are just going to
+	 -- get rid of the logic.
+				 
     --vsync <= ttxt_vs_out when mode7_enable = '1' else
     --         '1' when mode(1) = '0' else
     --         vsync_int;
@@ -1331,6 +1337,43 @@ end process;
         -- disable mode 7
         mode7_enable <= '0';
 
+        -- JOYSTICK HANDLING - emulation of joystick part of Plus 1
+-- from https://github.com/Sector14/acorn-electron-core
+-- Gary Preston <gary@mups.co.uk>
+	adc : process(clk_16M00, RST_n)
+    begin
+        if rising_edge(clk_16M00) then
+			if (addr = x"FC70") then -- read or write and we clear the interrupt
+				plus_1_adc_n_intr <= '1';
+			else
+				plus_1_adc_n_intr <= '0';
+			end if; 
+			
+			--
+			--  Do we need to delay the joystick?
+			--
+
+          case adc_chan is 
+            -- joy1
+            when "0100" => -- ch1 p15 X
+				  		  plus_1_adc_data   <=joystick1_x;
+            when "0101" => -- ch2 p7  Y            
+				  		  plus_1_adc_data   <=joystick1_y;
+						  
+            -- joy2
+            when "0110" => -- ch3 p12 X
+				  		  plus_1_adc_data   <=joystick2_x;
+            when "0111" => -- ch4 p4  Y
+				  		  plus_1_adc_data   <=joystick2_y;
+            when others => 
+              -- No other mode supported
+              plus_1_adc_data <= x"80"; 
+          end case;
+	end if;
+	end process;
+
+	plus_1_stat_reg <= '1' & plus_1_adc_n_intr &joystick2_fire & joystick1_fire &"0000";
 
 
+		  
 end behavioral;

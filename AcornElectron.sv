@@ -58,7 +58,7 @@ module emu
 `ifdef MISTER_FB
 	// Use framebuffer in DDRAM (USE_FB=1 in qsf)
 	// FB_FORMAT:
-	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
+	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp	 signal vdg_hs_n        : std_logic;
 	//    [3]   : 0=16bits 565 1=16bits 1555
 	//    [4]   : 0=RGB  1=BGR (for 16/24/32 modes)
 	//
@@ -201,8 +201,8 @@ parameter CONF_STR = {
 	"-;",
 	"O89,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;", 
-//	"OA,Mouse as Joystick,Yes,No;",
-//	"OB,Swap Joysticks,No,Yes;",
+	"OA,Swap Joysticks,No,Yes;",
+//	"OL,D-Pad Joystick emu,No,Yes;",
 	"-;",
 //	"O4,Model,B(MOS6502),Master(R65SC12);",
 //	"O56,Co-Processor,None,MOS65C02;",
@@ -251,6 +251,7 @@ pll pll
 	.outclk_7(clk_64)
 );
 
+/*
 reg vid_clk;
 reg [1:0] old_state;
 always @(posedge clk_sys) begin
@@ -264,7 +265,7 @@ always @(posedge clk_sys) begin
 		endcase
 	end
 end
-
+*/
 
 /////////////////  HPS  ///////////////////////////
 
@@ -272,10 +273,9 @@ wire [31:0] status;
 wire  [1:0] buttons;
 
 wire [15:0] joy1, joy2;
-wire  [7:0] joy1_x,joy1_y,joy2_x,joy2_y;
+wire [15:0] joya1, joya2;
 
 wire [10:0] ps2_key;
-wire [24:0] ps2_mouse;
 
 wire        ioctl_download;
 wire  [7:0] ioctl_index;
@@ -302,7 +302,6 @@ wire        img_mounted;
 wire        img_readonly;
 wire [63:0] img_size;
 
-wire [64:0] RTC;
 
 hps_io #(.CONF_STR(CONF_STR)) hps_io
 (
@@ -315,10 +314,8 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
    .gamma_bus(gamma_bus),
    .direct_video(direct_video),
 
-	.RTC(RTC),
 
 	.ps2_key(ps2_key),
-	.ps2_mouse(ps2_mouse),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
@@ -342,8 +339,8 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 
 	.joystick_0(joy1),
 	.joystick_1(joy2),
-	.joystick_l_analog_0({joy1_y,joy1_x}),
-	.joystick_l_analog_1({joy2_y,joy2_x})
+   .joystick_l_analog_0(joya1),
+   .joystick_l_analog_1(joya2),
 );
 
 /////////////////  RESET  /////////////////////////
@@ -472,10 +469,18 @@ always @(posedge clk_sys) old_we <= mem_we_n;
 
 wire reset_req;
 
-wire [7:0] joya_x = 8'hFF - {~ax[7],ax[6:0]};
-wire [7:0] joya_y = 8'hFF - {~ay[7],ay[6:0]};
-wire [7:0] joyb_x = 8'hFF - {~joy2_x[7],joy2_x[6:0]};
-wire [7:0] joyb_y = 8'hFF - {~joy2_y[7],joy2_y[6:0]};
+wire [9:0] center_joystick_y1   =  8'd128 + joya1[15:8];
+wire [9:0] center_joystick_x1   =  8'd128 + joya1[7:0];
+wire [9:0] center_joystick_y2   =  8'd128 + joya2[15:8];
+wire [9:0] center_joystick_x2   =  8'd128 + joya2[7:0];
+
+wire [31:0] acorn_joy1 = status[10] ? joy2 : joy1;
+wire [31:0] acorn_joy2 = status[10] ? joy1 : joy2;
+
+wire [15:0] acorn_ajoy1 = status[10] ? { (8'hFF - center_joystick_y2[7:0]),(8'hFF - center_joystick_x2[7:0])} : {(8'hFF - center_joystick_y1[7:0]),(8'hFF - center_joystick_x1[7:0])};
+wire [15:0] acorn_ajoy2 = status[10] ? {(8'hFF - center_joystick_y1[7:0]),(8'hFF - center_joystick_x1[7:0])} : {(8'hFF - center_joystick_y2[7:0]),(8'hFF - center_joystick_y2[7:0])};
+
+// analog -127..+127, Y: [15:8], X: [7:0]
 
 ElectronFpga_core Electron
 (
@@ -488,7 +493,6 @@ ElectronFpga_core Electron
 	.hard_reset_n(~reset),
 
 	.ps2_key(ps2_key),
-//	.ps2_mouse(status[10] ? ps2_mouse : 25'd0),
 
 //	.video_sel(clk_sel),
 	.video_cepix(ce_pix),
@@ -500,8 +504,6 @@ ElectronFpga_core Electron
 
 	.video_vsync(vs),
 	.video_hsync(hs),
-	//.vs(vs), // -- these hs/vs seem more compatible with the scaler in 15khz mode
-	//.hs(hs),
 
 	.audio_l(audio_snl),
 	.audio_r(audio_snr),
@@ -528,23 +530,23 @@ ElectronFpga_core Electron
    //     -- 10 - SVGA - 50Hz
    //     -- 11 - SVGA - 60Hz
 	//.vid_mode(2'b11)
-	.vid_mode(2'b00) // interlaced
+	.vid_mode(2'b00), // interlaced
 	//.vid_mode(2'b01) // non interlaced
 //	.vid_mode(status[8:7])
 	
-//	.RTC(RTC),
 
 /*
 	.keyb_dip({4'd0, ~status[12], ~status[9:7]}),
+*/
+   // // analog -127..+127, Y: [15:8], X: [7:0]
+	.joystick1_x(    acorn_ajoy1[7:0]),
+	.joystick1_y(    acorn_ajoy1[15:8]),
+	.joystick1_fire( acorn_joy1[4]),
 
-	.joystick1_x(    status[11] ? {joyb_x,joyb_x[7:4]} : {joya_x,joya_x[7:4]}),
-	.joystick1_y(    status[11] ? {joyb_y,joyb_y[7:4]} : {joya_y,joya_y[7:4]}),
-	.joystick1_fire( status[11] ? ~joy2[4] : ~af),
-
-	.joystick2_x(   ~status[11] ? {joya_x,joya_x[7:4]} : {joyb_x,joyb_x[7:4]}),
-	.joystick2_y(   ~status[11] ? {joya_y,joya_y[7:4]} : {joyb_y,joyb_y[7:4]}),
-	.joystick2_fire(~status[11] ? ~joy2[4] : ~af),
-
+	.joystick2_x(   acorn_ajoy2[7:0]),
+	.joystick2_y(   acorn_ajoy2[15:8]),
+	.joystick2_fire(acorn_joy2[4]),
+/*
 	.m128_mode(m128),
 	.copro_mode(|status[6:5])*/
 );
@@ -578,17 +580,7 @@ always @(posedge CLK_VIDEO ) begin
 end
 
 
-/*
-//assign CE_PIXEL = ce_pix2;
-assign CE_PIXEL = 1'b1;
-assign VGA_DE = ~(hblank | vblank);
-//assign VGA_DE = ~(VGA_HB | VGA_VB);
-assign VGA_HS = hs;
-assign VGA_VS = vs;
-assign VGA_R = {r,r};
-assign VGA_G = {g,g};
-assign VGA_B = {b,b};
-*/
+
 
 wire [2:0] scale = status[5:3];
 wire [2:0] sl = scale ? scale - 1'd1 : 3'd0;
@@ -672,44 +664,6 @@ always @(posedge clk_sys) begin
 
 	if((old_mosi ^ sdmosi) || (old_miso ^ sdmiso)) timeout <= 0;
 end
-
-
-//////////////////   ANALOG AXIS   ///////////////////
-reg        emu = 0;
-wire [7:0] ax = emu ? mx[7:0] : joy1_x;
-wire [7:0] ay = emu ? my[7:0] : joy1_y;
-wire [7:0] af = emu ? |ps2_mouse[1:0] : joy1[4];
-
-reg  signed [8:0] mx = 0;
-wire signed [8:0] mdx = {ps2_mouse[4],ps2_mouse[4],ps2_mouse[15:9]};
-wire signed [8:0] mdx2 = (mdx > 10) ? 9'd10 : (mdx < -10) ? -8'd10 : mdx;
-wire signed [8:0] nmx = mx + mdx2;
-
-reg  signed [8:0] my = 0;
-wire signed [8:0] mdy = {ps2_mouse[5],ps2_mouse[5],ps2_mouse[23:17]};
-wire signed [8:0] mdy2 = (mdy > 10) ? 9'd10 : (mdy < -10) ? -9'd10 : mdy;
-wire signed [8:0] nmy = my - mdy2;
-
-always @(posedge clk_sys) begin
-	reg old_stb = 0;
-	
-	old_stb <= ps2_mouse[24];
-	if(old_stb != ps2_mouse[24]) begin
-		emu <= 1;
-		mx <= (nmx < -128) ? -9'd128 : (nmx > 127) ? 9'd127 : nmx;
-		my <= (nmy < -128) ? -9'd128 : (nmy > 127) ? 9'd127 : nmy;
-	end
-
-	if(joy1 || reset_req || status[10]) begin
-		emu <= 0;
-		mx <= 0;
-		my <= 0;
-	end
-end
-
-
-
-
 
 
 

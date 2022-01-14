@@ -48,8 +48,6 @@ entity ElectronFpga_core is
         video_hsync    : out std_logic;
 		  video_hblank   : out std_logic;
 		  video_vblank   : out std_logic;
-		  hs             : out std_logic;
-		  vs             : out std_logic;
         -- Audio
         audio_l        : out std_logic;
         audio_r        : out std_logic;
@@ -91,7 +89,14 @@ entity ElectronFpga_core is
         avr_RxD        : in    std_logic;
         avr_TxD        : out   std_logic;
 
-        cpu_addr       : out   std_logic_vector(15 downto 0)
+        cpu_addr       : out   std_logic_vector(15 downto 0);
+		  
+		  joystick1_x   : in std_logic_vector(7 downto 0);
+		  joystick1_y   : in std_logic_vector(7 downto 0);
+		  joystick1_fire   : in std_logic;
+		  joystick2_x   : in std_logic_vector(7 downto 0);
+		  joystick2_y   : in std_logic_vector(7 downto 0);
+		  joystick2_fire   : in std_logic
 
     );
 end;
@@ -187,8 +192,6 @@ begin
         hsync     => video_hsync,
 		  hblank		=> video_hblank,
 		  vblank		=> video_vblank,
-		  hs        => hs, -- these hs/vs seem more compatible with the scaler in 15khz mode
-		  vs        => vs,
 
         -- Audio
         sound     => sound,
@@ -216,7 +219,14 @@ begin
 
         -- Clock Generation
         cpu_clken_out  => cpu_clken,
-        turbo          => key_turbo
+        turbo          => key_turbo,
+
+  		  joystick1_x   =>joystick1_x,
+		  joystick1_y  =>joystick1_y,
+		  joystick1_fire  =>joystick1_fire,
+		  joystick2_x  =>joystick2_x,
+		  joystick2_y   =>joystick2_y,
+		  joystick2_fire  =>joystick2_fire
 
     );
 
